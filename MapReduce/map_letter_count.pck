@@ -5,54 +5,47 @@ CREATE OR REPLACE PACKAGE map_letter_count IS
   -- Purpose : tutorial
 
   -- Public function and procedure declarations
-  FUNCTION result_set(p_key_value_pairs IN SYS_REFCURSOR)
+  FUNCTION result_set(p_documents IN SYS_REFCURSOR)
     RETURN map_reduce_type.key_value_pairs
     PIPELINED
-    PARALLEL_ENABLE(PARTITION p_key_value_pairs BY ANY);
+    PARALLEL_ENABLE(PARTITION p_documents BY ANY);
 
 END map_letter_count;
 /
 CREATE OR REPLACE PACKAGE BODY map_letter_count IS
 
-  FUNCTION result_set(p_key_value_pairs IN SYS_REFCURSOR)
+  FUNCTION result_set(p_documents IN SYS_REFCURSOR)
     RETURN map_reduce_type.key_value_pairs
     PIPELINED
-    PARALLEL_ENABLE(PARTITION p_key_value_pairs BY ANY) IS
+    PARALLEL_ENABLE(PARTITION p_documents BY ANY) IS
   
-    l_in1_key_value_pair       map_reduce_type.key_value_pair;
-    l_out_key_value_pair       map_reduce_type.key_value_pair;
+    TYPE document_type IS RECORD(
+      doc_id NUMBER,
+      text   VARCHAR2(4000));
+  
+    l_document       document_type;
+    l_key_value_pair map_reduce_type.key_value_pair;
   
   BEGIN
   
-    FETCH p_key_value_pairs
-      INTO l_in1_key_value_pair.key_item;
-  
-    l_out_key_value_pair.key_item   := l_in1_key_value_pair.key_item;
-    l_out_key_value_pair.value_item := 0;
-  
+    FETCH p_documents
+      INTO l_document;
     LOOP
-      EXIT WHEN p_key_value_pairs%NOTFOUND;
+      EXIT WHEN p_documents%NOTFOUND;
     
-      IF l_out_key_value_pair.key_item = l_in1_key_value_pair.key_item THEN
+      FOR i IN 1 .. length(l_document.text) LOOP
       
-        l_out_key_value_pair.value_item := l_out_key_value_pair.value_item +
-                                           l_in1_key_value_pair.value_item;
+        l_key_value_pair.key_item   := substr(l_document.text, i, 1);
+        l_key_value_pair.value_item := 1;
       
-      ELSE
+        PIPE ROW(l_key_value_pair);
       
-        PIPE ROW(l_out_key_value_pair);
-      
-        l_out_key_value_pair.key_item   := l_in1_key_value_pair.key_item;
-        l_out_key_value_pair.value_item := 1;
-      
-      END IF;
+      END LOOP;
     
-      FETCH p_key_value_pairs
-        INTO l_in1_key_value_pair;
+      FETCH p_documents
+        INTO l_document;
     
     END LOOP;
-  
-    PIPE ROW(l_out_key_value_pair);
   
     RETURN;
   

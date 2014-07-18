@@ -25,7 +25,7 @@ CREATE OR REPLACE PACKAGE BODY reduce_letter_count IS
   BEGIN
   
     FETCH p_key_value_pairs
-      INTO l_in1_key_value_pair.key_item;
+      INTO l_in1_key_value_pair;
   
     l_out_key_value_pair.key_item   := l_in1_key_value_pair.key_item;
     l_out_key_value_pair.value_item := 0;

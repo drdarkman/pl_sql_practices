@@ -5,19 +5,22 @@ CREATE OR REPLACE PACKAGE reduce_letter_count IS
   -- Purpose : tutorial
 
   -- Public function and procedure declarations
-  FUNCTION result_set(p_key_value_pairs IN SYS_REFCURSOR)
+  FUNCTION result_set(p_key_value_pairs IN map_reduce_type.key_value_pair_cursor)
     RETURN map_reduce_type.key_value_pairs
     PIPELINED
-    PARALLEL_ENABLE(PARTITION p_key_value_pairs BY ANY);
+      PARALLEL_ENABLE(PARTITION p_key_value_pairs BY RANGE(key_item))
+      ORDER p_key_value_pairs BY (key_item);
 
 END reduce_letter_count;
 /
 CREATE OR REPLACE PACKAGE BODY reduce_letter_count IS
 
-  FUNCTION result_set(p_key_value_pairs IN SYS_REFCURSOR)
+  FUNCTION result_set(p_key_value_pairs IN map_reduce_type.key_value_pair_cursor)
     RETURN map_reduce_type.key_value_pairs
     PIPELINED
-    PARALLEL_ENABLE(PARTITION p_key_value_pairs BY ANY) IS
+      PARALLEL_ENABLE(PARTITION p_key_value_pairs BY RANGE(key_item))
+      ORDER p_key_value_pairs BY (key_item)
+  IS
   
     l_in1_key_value_pair       map_reduce_type.key_value_pair;
     l_out_key_value_pair       map_reduce_type.key_value_pair;
